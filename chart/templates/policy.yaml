@@ -1,0 +1,33 @@
+{{ if .Values.aws.enabled }}
+{{ $secretArns := include "list.secretArns" . | fromYaml }}
+{{ $name :=  include "aws-xp-eso.name" . }}
+apiVersion: iam.aws.upbound.io/v1beta1
+kind: Policy
+metadata:
+  name: {{ .Values.aws.clusterName }}-{{ .Release.Namespace }}-{{ $name }}
+  labels:
+    iam.aws.upbound.io/policy: {{ .Values.aws.clusterName }}-{{ .Release.Namespace }}-{{ $name }}
+    {{- include "aws-xp-eso.labels" . | nindent 4 }}
+spec:
+  {{- with .Values.aws }}
+  forProvider:
+    policy: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+        {{- if .secretmanager.enabled }}
+          {
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:GetResourcePolicy",
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+                "secretsmanager:ListSecretVersionIds"
+            ],
+            "Resource": {{ $secretArns.items | uniq | toJson }}
+          }
+        {{- end }}
+        ]
+      }
+  {{- end }}
+{{- end }}

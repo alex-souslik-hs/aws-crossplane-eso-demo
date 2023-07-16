@@ -1,0 +1,18 @@
+nameOverride: ""
+fullnameOverride: ""
+
+aws:
+  enabled: false
+  accountId: ""
+  clusterName: ""
+  clusterId: ""
+  region: ""
+
+  secretManager:
+    enabled: false
+    secrets: []
+
+serviceAccount:
+  create: false
+  annotations: {}
+  name: ""

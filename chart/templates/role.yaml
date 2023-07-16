@@ -1,0 +1,34 @@
+{{ if .Values.aws.enabled }}
+{{ $name :=  include "aws-xp-eso.name" . }}
+{{ $sa := include "aws-xp-eso.serviceAccountName" . }}
+apiVersion: iam.aws.upbound.io/v1beta1
+kind: Role
+metadata:
+  name: {{ .Values.aws.clusterName }}-{{ .Release.Namespace }}-{{ $name }}
+  labels:
+    iam.aws.upbound.io/role: {{ .Values.aws.clusterName }}-{{ .Release.Namespace }}-{{ $name }}
+    {{- include "aws-xp-eso.labels" . | nindent 4 }}
+spec:
+  {{- with .Values.aws }}
+  forProvider:
+    assumeRolePolicy: |
+      {
+        "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+                "Principal": {
+                  "Federated": "arn:aws:iam::{{ .accountId }}:oidc-provider/oidc.eks.{{ .region }}.amazonaws.com/id/{{ .clusterId }}"
+                },
+                "Action": "sts:AssumeRoleWithWebIdentity",
+                "Condition": {
+                  "StringEquals": {
+                    "oidc.eks.{{ .region }}.amazonaws.com/id/{{ .clusterId }}:aud": "sts.amazonaws.com",
+                    "oidc.eks.{{ .region }}.amazonaws.com/id/{{ .clusterId }}:sub": "system:serviceaccount:{{ $.Release.Namespace }}:{{ $sa }}"
+                  }
+                }
+              }
+          ]
+      }
+  {{- end }}
+{{- end }}
