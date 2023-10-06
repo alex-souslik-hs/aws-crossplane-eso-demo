@@ -1,6 +1,7 @@
 {{ if .Values.aws.enabled }}
 {{ $name :=  include "aws-xp-eso.name" . }}
 {{ $sa := include "aws-xp-eso.serviceAccountName" . }}
+{{ $secretArns := include "list.secretArns" . | fromYaml }}
 apiVersion: iam.aws.upbound.io/v1beta1
 kind: Role
 metadata:
@@ -14,21 +15,41 @@ spec:
     assumeRolePolicy: |
       {
         "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-                "Principal": {
-                  "Federated": "arn:aws:iam::{{ .accountId }}:oidc-provider/oidc.eks.{{ .region }}.amazonaws.com/id/{{ .clusterId }}"
-                },
-                "Action": "sts:AssumeRoleWithWebIdentity",
-                "Condition": {
-                  "StringEquals": {
-                    "oidc.eks.{{ .region }}.amazonaws.com/id/{{ .clusterId }}:aud": "sts.amazonaws.com",
-                    "oidc.eks.{{ .region }}.amazonaws.com/id/{{ .clusterId }}:sub": "system:serviceaccount:{{ $.Release.Namespace }}:{{ $sa }}"
-                  }
-                }
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": {
+              "Federated": "arn:aws:iam::{{ .accountId }}:oidc-provider/oidc.eks.{{ .region }}.amazonaws.com/id/{{ .clusterId }}"
+            },
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+              "StringEquals": {
+                "oidc.eks.{{ .region }}.amazonaws.com/id/{{ .clusterId }}:aud": "sts.amazonaws.com",
+                "oidc.eks.{{ .region }}.amazonaws.com/id/{{ .clusterId }}:sub": "system:serviceaccount:{{ $.Release.Namespace }}:{{ $sa }}"
               }
-          ]
+            }
+          }
+        ]
       }
+    {{- if or .secretManager.create }}
+    inlinePolicy:
+      - name: SecretManager
+        policy: |
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                    "secretsmanager:GetResourcePolicy",
+                    "secretsmanager:GetSecretValue",
+                    "secretsmanager:DescribeSecret",
+                    "secretsmanager:ListSecretVersionIds"
+                ],
+                "Resource": {{ $secretArns.items | uniq | toJson }}
+              }
+            ]
+          }
+    {{- end }}
   {{- end }}
 {{- end }}

@@ -6,7 +6,7 @@ It's best used as a dependency for other charts that'll consume the secrets.
 ## Example of Usage
 The following example shows the expected Secret Manager `Secret` structure:
 > **Note** 
-> the `data` list is converted to YAML directly and as such [all fields under it](https://external-secrets.io/v0.9.1/spec/#external-secrets.io/v1beta1.ExternalSecretData) are supported.
+> the `data` list is converted to YAML directly and as such [all fields under it](https://external-secrets.io/latest/spec/#external-secrets.io/v1beta1.ExternalSecretData) are supported.
 ```yaml
 aws:
   secretManager:
